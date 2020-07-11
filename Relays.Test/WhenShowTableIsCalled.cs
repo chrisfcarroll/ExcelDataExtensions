@@ -1,13 +1,18 @@
+using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using Extensions.Logging.ListOfString;
 using TestBase;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Relays.Test
 {
     public class WhenShowTableIsCalled
     {
+        readonly ITestOutputHelper @out;
+
         [Fact]
         public void ShouldGetSomethingOutOfTheFile()
         {
@@ -17,7 +22,16 @@ namespace Relays.Test
             output.Tables.ShouldNotBeEmpty();
             output.Tables[0].Columns.ShouldNotBeEmpty();
             output.Tables[0].Rows.Count.ShouldBeGreaterThan(0);
-
+            foreach (DataTable outputTable in output.Tables)
+            {
+                @out.WriteLine(outputTable.TableName);
+                @out.WriteLine(string.Join(" | ",
+                    outputTable.Columns.Cast<DataColumn>()));
+                foreach (DataRow row in outputTable.Rows)
+                {
+                    @out.WriteLine(string.Join(" | ", row.ItemArray));
+                }
+            }
         }
         
         [Fact]
@@ -32,11 +46,16 @@ namespace Relays.Test
                 .First()
                 .ShouldNotBeEmpty();
         }
-        public WhenShowTableIsCalled()
+        public WhenShowTableIsCalled(ITestOutputHelper @out)
         {
+            this.@out = @out;
             unitUnderTest = new Relays(
                 new StringListLogger(log = new List<string>()),
-                new Settings());
+                new Settings
+                {
+                    InputPath = "TestFiles",
+                    FileSearchPattern = "*.xlsx"
+                });
         }
 
         readonly Relays unitUnderTest;
