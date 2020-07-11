@@ -3,35 +3,34 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using Extensions.Logging.ListOfString;
+using Relays.Extensions;
 using TestBase;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Relays.Test
 {
-    public class WhenShowTableIsCalled
+    public class FindContiguousBlocksShoulds
     {
         readonly ITestOutputHelper @out;
 
-        [Fact]
-        public void ShouldGetSomethingOutOfTheFile()
-        {
-            var outputs = unitUnderTest.ShowTables();
-            outputs.ShouldNotBeEmpty();
-            var output = outputs.FirstOrDefault().ShouldNotBeNull();
-            output.Tables.ShouldNotBeEmpty();
-            output.Tables[0].Columns.ShouldNotBeEmpty();
-            output.Tables[0].Rows.Count.ShouldBeGreaterThan(0);
-            foreach (DataTable outputTable in output.Tables)
+        public static readonly object[][] Example1ExpectedDataRanges =
+            new []
             {
-                @out.WriteLine(outputTable.TableName);
-                @out.WriteLine(string.Join(" | ",
-                    outputTable.Columns.Cast<DataColumn>()));
-                foreach (DataRow row in outputTable.Rows)
-                {
-                    @out.WriteLine(string.Join(" | ", row.ItemArray));
-                }
-            }
+                new object[]{"ExampleFile1.xlsx", (1, 2, 1, 2)}
+            };
+
+        [Theory]
+        [MemberData(nameof(Example1ExpectedDataRanges))]
+        public void FindTopLeftBottomRightSequences(string file,(int,int,int,int) topLeftBottomRight)
+        {
+            var firstFile = 
+                unitUnderTest.ListSourceFiles().Where(f => f.Name == file)
+                    .ShouldNotBeEmpty()
+                    .First();
+            var outputs = unitUnderTest.FindContiguousBlocks(firstFile);
+
+            outputs.ShouldNotBeEmpty();
         }
         
         [Fact]
@@ -46,7 +45,7 @@ namespace Relays.Test
                 .First()
                 .ShouldNotBeEmpty();
         }
-        public WhenShowTableIsCalled(ITestOutputHelper @out)
+        public FindContiguousBlocksShoulds(ITestOutputHelper @out)
         {
             this.@out = @out;
             unitUnderTest = new Relays(

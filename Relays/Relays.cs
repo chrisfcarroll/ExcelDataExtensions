@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
+using System.Linq;
 using System.Text;
 using ExcelDataReader;
 using Microsoft.Extensions.Logging;
@@ -28,6 +29,18 @@ namespace Relays
             }
         }
 
+        public IEnumerable<(int,int,int,int)> FindContiguousBlocks(FileInfo file)
+        {
+            DataSet ds;
+            using (var stream = file.OpenRead())
+            using (var reader = ExcelReaderFactory.CreateReader(stream))
+            {
+                ds= reader.AsDataSet();
+            }
+            
+            return new (int, int, int, int)[0];
+        }
+        
         public void Do()
         {
             log.LogDebug("Called on {@OS}", Environment.OSVersion);
