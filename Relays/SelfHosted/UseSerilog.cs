@@ -10,7 +10,7 @@ namespace Relays.SelfHosted
         public static ILoggerFactory GetFactory()
         {
             return new SerilogLoggerFactory(
-                Log.Logger = 
+                Log.Logger =
                     new LoggerConfiguration()
                         .MinimumLevel.Is(LogEventLevel.Verbose)
                         .Enrich.FromLogContext()
@@ -18,20 +18,20 @@ namespace Relays.SelfHosted
                         .CreateLogger());
         }
     }
-    
+
     static class MsLoggingToSerilogLogLevel
     {
         public static LogEventLevel ToSerilogEventLevel(this LogLevel msLevel)
         {
             switch (msLevel)
             {
-                case LogLevel.Critical : return LogEventLevel.Fatal;
-                case LogLevel.Error : return LogEventLevel.Error;
-                case LogLevel.Warning : return LogEventLevel.Warning;
-                case LogLevel.Information : return LogEventLevel.Information;
-                case LogLevel.Debug : return LogEventLevel.Debug;
-                case LogLevel.Trace : return LogEventLevel.Verbose;
-                default:return (LogEventLevel) int.MaxValue;
+                case LogLevel.Critical: return LogEventLevel.Fatal;
+                case LogLevel.Error: return LogEventLevel.Error;
+                case LogLevel.Warning: return LogEventLevel.Warning;
+                case LogLevel.Information: return LogEventLevel.Information;
+                case LogLevel.Debug: return LogEventLevel.Debug;
+                case LogLevel.Trace: return LogEventLevel.Verbose;
+                default: return (LogEventLevel) int.MaxValue;
             }
         }
     }

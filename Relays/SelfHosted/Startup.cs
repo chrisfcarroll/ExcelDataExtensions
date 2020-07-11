@@ -6,72 +6,88 @@ using Microsoft.Extensions.Logging;
 namespace Relays.SelfHosted
 {
     /// <summary>
-    /// When using <see cref="Relays"/> as a self-hosted console application, use <see cref="Configure"/>
-    /// to initialize defaults for:
-    /// <list type="bullet">
-    /// <item>The <see cref="LoggerFactory"/></item>
-    /// <item>The <see cref="Configuration"/></item>
-    /// <item>The <see cref="Settings"/></item>
-    /// </list>
-    /// Which you can then access as public static fields.
+    ///     When using <see cref="Relays" /> as a self-hosted console application, use
+    ///     <see cref="Configure" />
+    ///     to initialize defaults for:
+    ///     <list type="bullet">
+    ///         <item>The <see cref="LoggerFactory" /></item>
+    ///         <item>The <see cref="Configuration" /></item>
+    ///         <item>The <see cref="Settings" /></item>
+    ///     </list>
+    ///     Which you can then access as public static fields.
     /// </summary>
     /// <remarks>
-    /// When using <see cref="Relays"/> as an in-memory component, your hosting application would typically
-    /// be responsible for these three things and this class is not required.
+    ///     When using <see cref="Relays" /> as an in-memory component, your hosting application
+    ///     would typically
+    ///     be responsible for these three things and this class is not required.
     /// </remarks>
     class Startup
     {
         /// <summary>
-        /// When this assembly is used a self-hosted console application,
-        /// <see cref="Configure"/> initialises from an <c>appSettings.json</c> file if
-        /// one is found.
+        ///     When this assembly is used a self-hosted console application,
+        ///     <see cref="Configure" /> initialises from an <c>appSettings.json</c> file if
+        ///     one is found.
         /// </summary>
         static IConfigurationRoot Configuration;
-        
+
         /// <summary>
-        /// When this assembly is used a self-hosted console application, this
-        /// ILoggerFactory will be used to create an ILogger to pass to
-        /// <see cref="Relays(Microsoft.Extensions.Logging.ILogger,Relays.Settings)"/> 
+        ///     When this assembly is used a self-hosted console application, this
+        ///     ILoggerFactory will be used to create an ILogger to pass to
+        ///     <see cref="Relays(Microsoft.Extensions.Logging.ILogger,Relays.Settings)" />
         /// </summary>
         internal static ILoggerFactory LoggerFactory;
 
         /// <summary>
-        /// When this assembly is used a self-hosted console application, this Settings will
-        /// be passed to <see cref="Relays(Microsoft.Extensions.Logging.ILogger,Relays.Settings)"/> 
+        ///     When this assembly is used a self-hosted console application, this Settings will
+        ///     be passed to
+        ///     <see cref="Relays(Microsoft.Extensions.Logging.ILogger,Relays.Settings)" />
         /// </summary>
-        public static Settings Settings= new Settings();
+        public static Settings Settings = new Settings();
 
         /// <summary>
-        /// Initialise three things during application startup from the console.
-        /// <i>(When using <see cref="Relays"/> as an in memory component, your hosting application would typically
-        /// be responsible for these three things and this class is not required.)</i>
-        /// <list type="bullet">
-        /// <item>The <see cref="LoggerFactory"/></item>
-        /// <item>The <see cref="Configuration"/></item>
-        /// <item>The <see cref="Settings"/></item>
-        /// </list>
-        /// Default behaviour is:
-        /// <list type="bullet">
-        /// <item>use <see cref="FallbackLoggerFactory"/> which writes everything to <see cref="Console.Out"/>.</item>
-        /// <item>Look for an <c>appSettings.json</c> in the same directory as this assembly, else create an
-        /// empty Configuration object</item>
-        /// <item>Look in <see cref="Configuration"/> for a <see cref="ConfigurationSection"/> named
-        /// <paramref name="appSettingsSectionName"/>, which defaults to <c>nameof(<see cref="Relays"/>)</c>
-        /// </item>
-        /// </list>
+        ///     Initialise three things during application startup from the console.
+        ///     <i>
+        ///         (When using <see cref="Relays" /> as an in memory component, your hosting
+        ///         application would typically
+        ///         be responsible for these three things and this class is not required.)
+        ///     </i>
+        ///     <list type="bullet">
+        ///         <item>The <see cref="LoggerFactory" /></item>
+        ///         <item>The <see cref="Configuration" /></item>
+        ///         <item>The <see cref="Settings" /></item>
+        ///     </list>
+        ///     Default behaviour is:
+        ///     <list type="bullet">
+        ///         <item>
+        ///             use <see cref="FallbackLoggerFactory" /> which writes everything to
+        ///             <see cref="Console.Out" />.
+        ///         </item>
+        ///         <item>
+        ///             Look for an <c>appSettings.json</c> in the same directory as this assembly,
+        ///             else create an
+        ///             empty Configuration object
+        ///         </item>
+        ///         <item>
+        ///             Look in <see cref="Configuration" /> for a
+        ///             <see cref="ConfigurationSection" /> named
+        ///             <paramref name="appSettingsSectionName" />, which defaults to
+        ///             <c>nameof(<see cref="Relays" />)</c>
+        ///         </item>
+        ///     </list>
         /// </summary>
-        /// <returns>Can be changed to return a fluently usable
-        /// <see cref="FluentStartupAccessor"/> of the otherwise static
-        /// <see cref="Startup"/> settings.
+        /// <returns>
+        ///     Can be changed to return a fluently usable
+        ///     <see cref="FluentStartupAccessor" /> of the otherwise static
+        ///     <see cref="Startup" /> settings.
         /// </returns>
         public static void Configure()
         {
-            LoggerFactory= ChooseLogger.Choose();
+            LoggerFactory = ChooseLogger.Choose();
             var startupLog = LoggerFactory.CreateLogger<Startup>();
-            Configuration= ReadConfigurationFromAppsettings(startupLog);
-            Settings=ReadSettingsFromConfiguration(startupLog);
+            Configuration = ReadConfigurationFromAppsettings(startupLog);
+            Settings = ReadSettingsFromConfiguration(startupLog);
         }
-        
+
         static Settings ReadSettingsFromConfiguration(ILogger startupLog)
         {
             const string appSettingsSectionName = nameof(Relays);
@@ -79,19 +95,21 @@ namespace Relays.SelfHosted
             try
             {
                 Configuration.GetSection(appSettingsSectionName).Bind(settings);
-            }
-            catch (Exception e)
+            } catch (Exception e)
             {
-                startupLog.LogError(e, "Failed to bind settings from " +
-                                       $"Configuration {appSettingsSectionName}");
+                startupLog.LogError(
+                    e,
+                    "Failed to bind settings from " +
+                    $"Configuration {appSettingsSectionName}");
             }
+
             return settings;
         }
 
         static IConfigurationRoot ReadConfigurationFromAppsettings(ILogger startupLog)
         {
             IConfigurationRoot configuration;
-            string appsettingsPath=null;
+            string appsettingsPath = null;
             try
             {
                 var startupLocation = Path.GetDirectoryName(typeof(Startup).Assembly.Location) ?? ".";
@@ -109,20 +127,22 @@ namespace Relays.SelfHosted
                     configuration = new ConfigurationBuilder().Build();
                     startupLog.LogWarning("No appsettings.json file found for configuration");
                 }
-            }
-            catch (Exception e)
+            } catch (Exception e)
             {
-                startupLog.LogError(e, $"At Startup, attempting to read Configuration" +
-                                       $" from {appsettingsPath}");
+                startupLog.LogError(
+                    e,
+                    "At Startup, attempting to read Configuration" +
+                    $" from {appsettingsPath}");
                 throw;
             }
 
             return configuration;
         }
-        
+
         /// <summary>
-        /// An optional convenience instance of the otherwise static <see cref="Startup"/>
-        /// which you can use to allow <see cref="Startup.Configure"/> to be called in fluent style. 
+        ///     An optional convenience instance of the otherwise static <see cref="Startup" />
+        ///     which you can use to allow <see cref="Startup.Configure" /> to be called in fluent
+        ///     style.
         /// </summary>
         class FluentStartupAccessor : Startup
         {

@@ -7,12 +7,12 @@ using Microsoft.Extensions.Logging;
 
 namespace Relays.SelfHosted
 {
-    class FallbackLoggerFactory: ILoggerFactory
+    class FallbackLoggerFactory : ILoggerFactory
     {
-        static readonly FallbackLoggerProvider Provider= new FallbackLoggerProvider();
-        public ILogger CreateLogger(string categoryName){return Provider.CreateLogger(categoryName);}
-        public void AddProvider(ILoggerProvider provider){}
-        public void Dispose(){Provider?.Dispose();}
+        static readonly FallbackLoggerProvider Provider = new FallbackLoggerProvider();
+        public ILogger CreateLogger(string categoryName) { return Provider.CreateLogger(categoryName); }
+        public void AddProvider(ILoggerProvider provider) { }
+        public void Dispose() { Provider?.Dispose(); }
     }
 
     static class FallbackLoggerFactoryExtension
@@ -20,10 +20,11 @@ namespace Relays.SelfHosted
         public static ILoggerFactory AddFallbackLogger(this ILoggerFactory factory, List<string> backingList, string name = "ListOfString")
         {
             if (factory == null) throw new ArgumentNullException(nameof(factory));
-            factory.AddProvider(new FallbackLoggerProvider(backingList??new List<string>(), name));
+            factory.AddProvider(new FallbackLoggerProvider(backingList ?? new List<string>(), name));
             return factory;
         }
-        public static ILoggerFactory AddFallbackLogger(this ILoggerFactory factory,string name = "Console")
+
+        public static ILoggerFactory AddFallbackLogger(this ILoggerFactory factory, string name = "Console")
         {
             if (factory == null) throw new ArgumentNullException(nameof(factory));
             factory.AddProvider(new FallbackLoggerProvider(name));
@@ -33,44 +34,18 @@ namespace Relays.SelfHosted
 
     class FallbackLogger : ILogger
     {
-        public static ConcurrentDictionary<string, FallbackLogger> Loggers { get; } = new ConcurrentDictionary<string, FallbackLogger>();
-        
-        Action<string> Output;
-        
         static readonly string LoglevelPadding = ": ";
 
         static readonly string MessagePadding = new string(' ', LogLevel.Information.ToString().Length + LoglevelPadding.Length);
 
         static readonly string NewLineWithMessagePadding = Environment.NewLine + MessagePadding;
-        
+
         [ThreadStatic] static StringBuilder logBuilder;
-        Func<string, LogLevel, bool> filter;
+        public static ConcurrentDictionary<string, FallbackLogger> Loggers { get; } = new ConcurrentDictionary<string, FallbackLogger>();
 
         /// <summary>Defaults to UTC sortable [2020-07-09T15:30:54.003Z]</summary>
-        public Func<string> Timestamp { get; set; } = () => 
+        public Func<string> Timestamp { get; set; } = () =>
             DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
-
-        public FallbackLogger(List<string> backingList, string name=null, Func<string, 
-        LogLevel, bool> filter = null, bool includeScopes = true, Func<string> 
-        timestamp=null)
-        {
-            Name = name ?? String.Empty;
-            Filter = filter ?? ((category, logLevel) => true);
-            IncludeScopes = includeScopes;
-            LoggedLines = backingList ?? new List<string>();
-            Output = LoggedLines.Add;
-            Timestamp = timestamp ?? Timestamp;
-        }
-        public FallbackLogger(string name,
-            Func<string, LogLevel, bool> filter = null, bool includeScopes = true, 
-            Func<string> timestamp=null)
-        {
-            Name = name ?? String.Empty;
-            Filter = filter ?? ((category, logLevel) => true);
-            IncludeScopes = includeScopes;
-            Output = Console.WriteLine;
-            Timestamp = timestamp ?? Timestamp;
-        }
 
         public List<string> LoggedLines { get; }
 
@@ -84,42 +59,37 @@ namespace Relays.SelfHosted
 
         public string Name { get; }
 
-        ScopeStack Scopes {get;}= new ScopeStack();
+        ScopeStack Scopes { get; } = new ScopeStack();
 
-        public class ScopeStack : Stack<(string, object)>, IDisposable
-        {
-            public void Dispose(){Pop();}
-            public new ScopeStack Push((string,object) item){base.Push(item);return this;}
-        }
-
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state,
-                                Exception exception,
-                                Func<TState, Exception, string> formatter)
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception exception,
+            Func<TState, Exception, string> formatter)
         {
             if (!IsEnabled(logLevel)) return;
-            
+
             var message = "";
             try
             {
                 try
                 {
-                    var fState = ((IReadOnlyList<KeyValuePair<string, object>>)state);
-                    var m = 
+                    var fState = (IReadOnlyList<KeyValuePair<string, object>>) state;
+                    var m =
                         fState.FirstOrDefault(s => s.Key == "{OriginalFormat}");
                     var values =
                         fState.Where(s => s.Key != "{OriginalFormat}")
-                            .Select(v=>v.Key+"="+v.Value.AsJsonElseNull());
+                            .Select(v => v.Key + "=" + v.Value.AsJsonElseNull());
                     message =
                         $"{m.Value}\n{string.Join("\n", values)}";
-                }
-                catch (Exception)
+                } catch (Exception)
                 {
                     if (formatter == null) throw new ArgumentNullException(nameof(formatter));
                     message = formatter(state, exception);
                     throw;
                 }
-            }
-            catch (Exception e)
+            } catch (Exception e)
             {
                 message += $"error trying to log {state?.GetType()} {exception}\nException: {e}";
             }
@@ -148,7 +118,7 @@ namespace Relays.SelfHosted
             builder.Append(eventId);
             builder.AppendLine("]");
             if (IncludeScopes) GetScopeInformation(builder);
-            if (!String.IsNullOrEmpty(message))
+            if (!string.IsNullOrEmpty(message))
             {
                 builder.Append(MessagePadding);
                 var length = builder.Length;
@@ -156,10 +126,12 @@ namespace Relays.SelfHosted
                 builder.Replace(Environment.NewLine, NewLineWithMessagePadding, length, message.Length);
             }
 
-            if (exception      != null) builder.AppendLine(exception.ToString());
-            if (builder.Length > 0) Output($"[{logLevel.ToString()}]" +
-                       $"[{Timestamp()}]" +
-                       $" {builder}");
+            if (exception != null) builder.AppendLine(exception.ToString());
+            if (builder.Length > 0)
+                Output(
+                    $"[{logLevel.ToString()}]" +
+                    $"[{Timestamp()}]" +
+                    $" {builder}");
 
             builder.Clear();
             if (builder.Capacity > 1024) builder.Capacity = 1024;
@@ -169,18 +141,63 @@ namespace Relays.SelfHosted
         void GetScopeInformation(StringBuilder builder)
         {
             var length = builder.Length;
-            foreach(var scope in Scopes)
+            foreach (var scope in Scopes)
             {
                 var asString = scope.Item2 is Type t ? t.Name : scope.Item2;
                 var str = length != builder.Length
-                              ? String.Format("=> {0} ", asString)
-                              : String.Format("=> {0}",  asString);
+                    ? string.Format("=> {0} ", asString)
+                    : string.Format("=> {0}", asString);
                 builder.Insert(length, str);
             }
 
-            if (builder.Length <= length)return;
+            if (builder.Length <= length) return;
             builder.Insert(length, MessagePadding);
             builder.AppendLine();
+        }
+
+        public FallbackLogger(
+            List<string> backingList,
+            string name = null,
+            Func<string,
+                LogLevel, bool> filter = null,
+            bool includeScopes = true,
+            Func<string>
+                timestamp = null)
+        {
+            Name = name ?? string.Empty;
+            Filter = filter ?? ((category, logLevel) => true);
+            IncludeScopes = includeScopes;
+            LoggedLines = backingList ?? new List<string>();
+            Output = LoggedLines.Add;
+            Timestamp = timestamp ?? Timestamp;
+        }
+
+        public FallbackLogger(
+            string name,
+            Func<string, LogLevel, bool> filter = null,
+            bool includeScopes = true,
+            Func<string> timestamp = null)
+        {
+            Name = name ?? string.Empty;
+            Filter = filter ?? ((category, logLevel) => true);
+            IncludeScopes = includeScopes;
+            Output = Console.WriteLine;
+            Timestamp = timestamp ?? Timestamp;
+        }
+
+        Func<string, LogLevel, bool> filter;
+
+        readonly Action<string> Output;
+
+        public class ScopeStack : Stack<(string, object)>, IDisposable
+        {
+            public void Dispose() { Pop(); }
+
+            public new ScopeStack Push((string, object) item)
+            {
+                base.Push(item);
+                return this;
+            }
         }
     }
 
@@ -189,28 +206,10 @@ namespace Relays.SelfHosted
     {
         static readonly Func<string, LogLevel, bool> FalseFilter = (cat, level) => false;
         static readonly Func<string, LogLevel, bool> TrueFilter = (cat, level) => true;
-        readonly Func<string, LogLevel, bool> filter;
-        readonly bool includeScopes;
-
-        public FallbackLoggerProvider()
-        {
-            filter = TrueFilter;
-            includeScopes = true;
-        }
-
-        public FallbackLoggerProvider(List<String> backingList, string name = null, Func<string, LogLevel, bool> filter = null, bool includeScopes = true)
-        {
-            this.filter = filter ?? TrueFilter;
-            this.includeScopes = includeScopes;
-            if (name!= null && backingList == null) CreateLogger(name);
-            FallbackLogger.Loggers.GetOrAdd(name ?? String.Empty, n => new FallbackLogger(backingList, n, this.filter, this.includeScopes));
-        }
-
-        public FallbackLoggerProvider(string name ) { FallbackLogger.Loggers.TryAdd(name, new FallbackLogger("name")); }
 
         public ILogger CreateLogger(string name)
         {
-            return FallbackLogger.Loggers.GetOrAdd(name ?? String.Empty, CreateLoggerImplementation);
+            return FallbackLogger.Loggers.GetOrAdd(name ?? string.Empty, CreateLoggerImplementation);
         }
 
         public void Dispose()
@@ -224,5 +223,23 @@ namespace Relays.SelfHosted
         }
 
         Func<string, LogLevel, bool> GetFilter() { return filter ?? TrueFilter; }
+
+        public FallbackLoggerProvider()
+        {
+            filter = TrueFilter;
+            includeScopes = true;
+        }
+
+        public FallbackLoggerProvider(List<string> backingList, string name = null, Func<string, LogLevel, bool> filter = null, bool includeScopes = true)
+        {
+            this.filter = filter ?? TrueFilter;
+            this.includeScopes = includeScopes;
+            if (name != null && backingList == null) CreateLogger(name);
+            FallbackLogger.Loggers.GetOrAdd(name ?? string.Empty, n => new FallbackLogger(backingList, n, this.filter, this.includeScopes));
+        }
+
+        public FallbackLoggerProvider(string name) { FallbackLogger.Loggers.TryAdd(name, new FallbackLogger("name")); }
+        readonly Func<string, LogLevel, bool> filter;
+        readonly bool includeScopes;
     }
 }

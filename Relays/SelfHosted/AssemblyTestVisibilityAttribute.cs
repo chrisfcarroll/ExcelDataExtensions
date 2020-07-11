@@ -1,4 +1,7 @@
 //
 //
 //
-[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Relays.Tests")]
+
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("Relays.Tests")]
